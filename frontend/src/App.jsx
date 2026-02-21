@@ -16,9 +16,6 @@ function App() {
             <h1>AlphaWave</h1>
           </div>
           <div className="nav-links">
-            <a href="#solutions">Solutions</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
             <button className="primary-btn" onClick={() => setShowFullChat(true)}>Launch Assistant</button>
           </div>
         </div>

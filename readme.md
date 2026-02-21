@@ -1,56 +1,55 @@
-# AlphaWave AI Assistant 🌊
+# AlphaWave AI Assistant
 
-AlphaWave is a professional, self-hosted RAG (Retrieval-Augmented Generation) platform. It combines a high-performance Python/PostgreSQL backend with a premium React frontend to deliver secure, context-aware AI interactions.
-
-## 🚀 Key Features
-
-### Intelligent AI & RAG Layer
-- **Local LLM**: Powered by **Ollama (Llama 3)** for grounded, private response generation.
-- **Semantic Embeddings**: Uses `nomic-embed-text` (768 dimensions) for superior document understanding.
-- **Vector Search**: High-performance **Cosine Distance** similarity matching using **pgvector**.
-- **Hybrid Search**: Combines semantic vector retrieval with keyword-based filtering for maximum accuracy.
-- **Automated Data Ingestion**: Built-in scraper using **BeautifulSoup** and **Requests** to build your knowledge base.
-
-### Professional UI/UX
-- **Dual-Interface System**:
-  - **Floating Assistant Widget**: Minimalist, corporate-style popup for quick queries.
-  - **Full-Screen Command Center**: Large-scale interface for deep interactions.
-- **Responsive & Premium Design**: Enterprise SaaS aesthetic with glassmorphism, micro-animations, and full mobile support.
-- **Client-Server Separation**: Modern REST API architecture ensuring scalability and clean boundaries.
+AlphaWave is a self-hosted Retrieval-Augmented Generation (RAG) AI assistant platform. It combines a Python/PostgreSQL backend with a React frontend to deliver private, context-aware AI interactions powered entirely by local infrastructure.
 
 ---
 
-## 🛠️ Tech Stack
+## What It Does
+
+Users ask questions via a chat interface. The system searches a private knowledge base for the most relevant documents, injects them as context, and generates a grounded answer using a local LLM — without sending any data to external services.
+
+---
+
+## Tech Stack
 
 ### Backend
-- **Core**: Python 3, FastAPI, Uvicorn (ASGI)
-- **Database**: PostgreSQL 18 with **pgvector** (running via Docker)
-- **Database Driver**: `psycopg2`
-- **Configuration**: `python-dotenv` for environment isolation
+| Component        | Technology                        |
+|------------------|-----------------------------------|
+| API Framework    | FastAPI + Uvicorn                 |
+| Language         | Python 3                          |
+| Database         | PostgreSQL 18 with pgvector       |
+| DB Driver        | psycopg2                          |
+| Infrastructure   | Docker Desktop                    |
 
-### AI / RAG
-- **LLM Engine**: Ollama (llama3)
-- **Embeddings**: nomic-embed-text (Vector size: 768)
-- **Logic**: Custom Python RAG implementation with semantic retrieval
+### AI / RAG Layer
+| Component        | Technology                        |
+|------------------|-----------------------------------|
+| Orchestration    | LangChain (LCEL)                  |
+| LLM              | Ollama — llama3                   |
+| Embeddings       | Ollama — nomic-embed-text (768-d) |
+| Vector Similarity| Cosine Distance via pgvector      |
+| Web Scraping     | BeautifulSoup + Requests          |
 
 ### Frontend
-- **Framework**: React (Vite)
-- **State Management**: React Hooks (useState, useEffect, useRef)
-- **Styling**: Vanilla CSS (Responsive, Modern UI)
-- **Communication**: Fetch API
+| Component        | Technology                        |
+|------------------|-----------------------------------|
+| Framework        | React + Vite                      |
+| Styling          | Vanilla CSS                       |
+| Communication    | Fetch API (REST)                  |
 
 ---
 
-## 📦 Getting Started
+## Getting Started
 
-### 1. Prerequisites
+### Prerequisites
 - Python 3.10+
-- Node.js & npm
+- Node.js and npm
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Ollama](https://ollama.com/) (installed and running)
+- [Ollama](https://ollama.com/)
 
-### 2. Database Setup
-The database runs as a containerized PostgreSQL 18 instance with vector capabilities:
+### 1. Database
+
+Run PostgreSQL with pgvector in Docker:
 
 ```bash
 docker run --name alphawave-db \
@@ -61,59 +60,69 @@ docker run --name alphawave-db \
   -d ankane/pgvector
 ```
 
-### 3. AI Models Setup
+### 2. AI Models
+
 Pull the required models via Ollama:
+
 ```bash
 ollama pull llama3
 ollama pull nomic-embed-text
 ```
 
-### 4. Backend Setup
-1. **Virtual Environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
-   ```
-2. **Installation**:
-   ```bash
-   pip install fastapi uvicorn ollama pydantic beautifulsoup4 requests psycopg2-binary python-dotenv
-   ```
-3. **Execution**:
-   ```bash
-   uvicorn app.api:app --reload
-   ```
+### 3. Backend
 
-### 5. Frontend Setup
-1. **Installation**:
-   ```bash
-   cd frontend
-   npm install
-   ```
-2. **Execution**:
-   ```bash
-   npm run dev
-   ```
+```bash
+python -m venv venv
+venv\Scripts\activate
+pip install fastapi uvicorn langchain langchain-ollama langchain-text-splitters psycopg2-binary beautifulsoup4 requests python-dotenv
+uvicorn app.api:app --reload
+```
+
+### 4. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` in a browser.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
-```text
-├── app/                # Backend Application
-│   ├── api.py          # FastAPI Endpoints
-│   ├── rag.py          # RAG & LLM Logic
-│   ├── database.py     # PostgreSQL & pgvector Logic
-│   ├── embeddings.py   # Embedding Generation (size: 768)
-│   └── scraper.py      # BeautifulSoup Data Ingestion
-├── frontend/           # React Frontend
-│   ├── src/
-│   │   ├── ChatWidget  # Professional Floating UI
-│   │   └── FullChat    # Large Screen UI
-├── docs/               # Local Knowledge Documents
-└── readme.md           # Documentation
+```
+├── app/
+│   ├── api.py               # FastAPI endpoint definitions
+│   ├── rag.py               # LangChain RAG pipeline
+│   ├── database.py          # PostgreSQL + pgvector queries
+│   ├── embeddings.py        # OllamaEmbeddings wrapper
+│   ├── chunking.py          # RecursiveCharacterTextSplitter
+│   └── scraper.py           # Web crawler and data ingestion
+├── frontend/
+│   └── src/
+│       ├── App.jsx           # Landing page and navigation
+│       ├── ChatWidget.jsx    # Floating chat popup
+│       └── FullChat.jsx      # Full-screen chat interface
+├── docs/
+│   └── technical-documentation.md
+└── readme.md
 ```
 
 ---
 
-## 🔒 Security & Data Sovereignty
-AlphaWave is a **fully self-hosted** solution. By using local Docker containers and local LLM instances (Ollama), your data never leaves your infrastructure, providing absolute privacy and control over your grounded AI responses.
+## Startup Order
+
+| Step | What              | Command                              |
+|------|-------------------|--------------------------------------|
+| 1    | Docker container  | `docker start alphawave-db`          |
+| 2    | Ollama            | Open Ollama app or `ollama serve`    |
+| 3    | Python backend    | `uvicorn app.api:app --reload`       |
+| 4    | React frontend    | `cd frontend && npm run dev`         |
+
+---
+
+## Documentation
+
+Full technical documentation is available in [`docs/technical-documentation.md`](docs/technical-documentation.md).
