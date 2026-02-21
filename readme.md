@@ -90,28 +90,6 @@ Open `http://localhost:5173` in a browser.
 
 ---
 
-## Project Structure
-
-```
-├── app/
-│   ├── api.py               # FastAPI endpoint definitions
-│   ├── rag.py               # LangChain RAG pipeline
-│   ├── database.py          # PostgreSQL + pgvector queries
-│   ├── embeddings.py        # OllamaEmbeddings wrapper
-│   ├── chunking.py          # RecursiveCharacterTextSplitter
-│   └── scraper.py           # Web crawler and data ingestion
-├── frontend/
-│   └── src/
-│       ├── App.jsx           # Landing page and navigation
-│       ├── ChatWidget.jsx    # Floating chat popup
-│       └── FullChat.jsx      # Full-screen chat interface
-├── docs/
-│   └── technical-documentation.md
-└── readme.md
-```
-
----
-
 ## Startup Order
 
 | Step | What              | Command                              |
