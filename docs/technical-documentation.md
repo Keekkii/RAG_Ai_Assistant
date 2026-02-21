@@ -10,44 +10,9 @@ The architecture follows a strict **client-server separation**:
 
 ---
 
-## 2. Architecture Diagram
+## 2. Backend
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (React/Vite)                    │
-│                                                                 │
-│   Landing Page  →  Floating Widget  ←→  Full Screen UI         │
-│                          │                                      │
-│              POST /chat  │  { question: string }               │
-└──────────────────────────┼──────────────────────────────────────┘
-                           │ HTTP (REST)
-┌──────────────────────────▼──────────────────────────────────────┐
-│                      BACKEND (FastAPI)                          │
-│                           api.py                               │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                      RAG PIPELINE (rag.py)                      │
-│                                                                 │
-│  1. Embed question  →  2. Vector search  →  3. Build context    │
-│                                                                 │
-│  4. LangChain LCEL: PromptTemplate | ChatOllama | StrOutputParser│
-└──────────┬──────────────────────────────────────┬──────────────┘
-           │                                      │
-┌──────────▼──────────┐               ┌───────────▼──────────────┐
-│  Ollama (Local LLM) │               │  PostgreSQL 18 + pgvector │
-│  Model: llama3       │               │  Docker Container         │
-│  Embeddings:         │               │  Port: 5433               │
-│  nomic-embed-text   │               │  DB: alphawave_ai         │
-│  (768 dimensions)   │               │                           │
-└──────────────────────┘               └───────────────────────────┘
-```
-
----
-
-## 3. Backend
-
-### 3.1 `app/api.py` — REST API
+### 2.1 `app/api.py` — REST API
 
 The entry point for all client requests. Built with **FastAPI**.
 
@@ -71,7 +36,7 @@ The entry point for all client requests. Built with **FastAPI**.
 
 ---
 
-### 3.2 `app/rag.py` — RAG Pipeline
+### 2.2 `app/rag.py` — RAG Pipeline
 
 The core intelligence layer. Uses **LangChain LCEL** (Expression Language) to define a composable chain.
 
@@ -100,29 +65,29 @@ Answer:
 
 ---
 
-### 3.3 `app/database.py` — PostgreSQL & pgvector
+### 2.3 `app/database.py` — PostgreSQL & pgvector
 
 Handles all database interactions via raw `psycopg2` SQL for full control over the `pgvector` query planner.
 
 **Connection Config:**
 
-| Parameter | Value |
-|-----------|-------|
-| Host | `localhost` |
-| Port | `5433` |
-| Database | `alphawave_ai` |
-| User | `postgres` |
-| Password | `postgres` |
+| Parameter | Value          |
+|-----------|----------------|
+| Host      | `localhost`    |
+| Port      | `5433`         |
+| Database  | `alphawave_ai` |
+| User      | `postgres`     |
+| Password  | `postgres`     |
 
 **Schema (`documents` table):**
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | `SERIAL PRIMARY KEY` | Auto-increment row ID |
-| `url` | `TEXT` | Source URL of the document |
-| `title` | `TEXT` | Page title / chunk label |
-| `content` | `TEXT` | The raw text chunk |
-| `embedding` | `VECTOR(768)` | 768-dim embedding from nomic-embed-text |
+| Column      | Type                | Description                             |
+|-------------|---------------------|-----------------------------------------|
+| `id`        | `SERIAL PRIMARY KEY`| Auto-increment row ID                   |
+| `url`       | `TEXT`              | Source URL of the document              |
+| `title`     | `TEXT`              | Page title / chunk label                |
+| `content`   | `TEXT`              | The raw text chunk                      |
+| `embedding` | `VECTOR(768)`       | 768-dim embedding from nomic-embed-text |
 
 **Search Strategy — Hybrid:**
 
@@ -134,7 +99,7 @@ Documents matching keywords are ranked first (`ORDER BY CASE ... END`), then ord
 
 ---
 
-### 3.4 `app/embeddings.py` — Embedding Generation
+### 2.4 `app/embeddings.py` — Embedding Generation
 
 Wraps LangChain's `OllamaEmbeddings` to generate vector representations of text.
 
@@ -147,7 +112,7 @@ Called by both `database.py` (during insert and search) and can be tested standa
 
 ---
 
-### 3.5 `app/chunking.py` — Text Splitting
+### 2.5 `app/chunking.py` — Text Splitting
 
 Wraps LangChain's `RecursiveCharacterTextSplitter` to split long documents into overlapping chunks before ingestion.
 
@@ -160,7 +125,7 @@ The recursive splitter tries to split on paragraphs, then sentences, then words 
 
 ---
 
-### 3.6 `app/scraper.py` — Web Crawler & Data Ingestion
+### 2.6 `app/scraper.py` — Web Crawler & Data Ingestion
 
 A custom BFS (breadth-first search) web crawler that scrapes an entire domain and populates the database.
 
@@ -297,25 +262,25 @@ ollama pull nomic-embed-text # Embedding generation (768-dim)
 ## 8. Key Dependencies
 
 ### Python
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `fastapi` | latest | REST API framework |
-| `uvicorn` | latest | ASGI server |
-| `langchain` | 1.2.x | LLM orchestration |
-| `langchain-core` | latest | Prompts, parsers, LCEL primitives |
-| `langchain-ollama` | latest | ChatOllama, OllamaEmbeddings wrappers |
-| `langchain-text-splitters` | latest | RecursiveCharacterTextSplitter |
-| `psycopg2-binary` | latest | PostgreSQL driver |
-| `beautifulsoup4` | latest | HTML parsing for scraper |
-| `requests` | latest | HTTP client for scraper |
-| `python-dotenv` | latest | Environment variable management |
+| Package                    | Version | Purpose                               |
+|----------------------------|---------|---------------------------------------|
+| `fastapi`                  | latest  | REST API framework                    |
+| `uvicorn`                  | latest  | ASGI server                           |
+| `langchain`                | 1.2.x   | LLM orchestration                     |
+| `langchain-core`           | latest  | Prompts, parsers, LCEL primitives     |
+| `langchain-ollama`         | latest  | ChatOllama, OllamaEmbeddings wrappers |
+| `langchain-text-splitters` | latest  | RecursiveCharacterTextSplitter        |
+| `psycopg2-binary`          | latest  | PostgreSQL driver                     |
+| `beautifulsoup4`           | latest  | HTML parsing for scraper              |
+| `requests`                 | latest  | HTTP client for scraper               |
+| `python-dotenv`            | latest  | Environment variable management       |
 
 ### Node.js / Frontend
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `react` | ^19 | UI library |
-| `react-dom` | ^19 | DOM renderer |
-| `vite` | ^7 | Build tool and dev server |
+| Package                    | Version | Purpose                               |
+|----------------------------|---------|---------------------------------------|
+| `react`                    | ^19     | UI library                            |
+| `react-dom`                | ^19     | DOM renderer                          |
+| `vite`                     | ^7      | Build tool and dev server             |
 
 ---
 
