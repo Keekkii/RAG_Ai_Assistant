@@ -1,6 +1,6 @@
 # AlphaWave AI Assistant
 
-AlphaWave is a self-hosted Retrieval-Augmented Generation (RAG) AI assistant platform. It combines a Python/PostgreSQL backend with a React frontend to deliver private, context-aware AI interactions powered entirely by local infrastructure.
+Self-hosted Retrieval-Augmented Generation (RAG) AI assistant platform. It combines a Python/PostgreSQL backend with a React frontend to deliver private, context-aware AI interactions powered entirely by local infrastructure.
 
 ---
 
