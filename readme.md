@@ -1,6 +1,6 @@
 # AlphaWave AI Assistant
 
-AlphaWave is a self-hosted Retrieval-Augmented Generation (RAG) AI assistant platform. It combines a Python/PostgreSQL backend with a React frontend to deliver private, context-aware AI interactions powered entirely by local infrastructure.
+Self-hosted Retrieval-Augmented Generation (RAG) AI assistant platform. It combines a Python/PostgreSQL backend with a React frontend to deliver private, context-aware AI interactions powered entirely by local infrastructure.
 
 ---
 
@@ -87,28 +87,6 @@ npm run dev
 ```
 
 Open `http://localhost:5173` in a browser.
-
----
-
-## Project Structure
-
-```
-├── app/
-│   ├── api.py               # FastAPI endpoint definitions
-│   ├── rag.py               # LangChain RAG pipeline
-│   ├── database.py          # PostgreSQL + pgvector queries
-│   ├── embeddings.py        # OllamaEmbeddings wrapper
-│   ├── chunking.py          # RecursiveCharacterTextSplitter
-│   └── scraper.py           # Web crawler and data ingestion
-├── frontend/
-│   └── src/
-│       ├── App.jsx           # Landing page and navigation
-│       ├── ChatWidget.jsx    # Floating chat popup
-│       └── FullChat.jsx      # Full-screen chat interface
-├── docs/
-│   └── technical-documentation.md
-└── readme.md
-```
 
 ---
 
