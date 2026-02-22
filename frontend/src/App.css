@@ -182,12 +182,59 @@ body {
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
+  .hero {
+    padding: 120px 20px 60px;
+  }
+
   .hero h2 {
-    font-size: 40px;
-    letter-spacing: -1px;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+
+  .hero p {
+    font-size: 16px;
+    padding: 0 10px;
+  }
+
+  .nav-content {
+    padding: 0 16px;
+  }
+
+  .logo-section h1 {
+    font-size: 18px;
   }
 
   .nav-links {
+    gap: 8px;
+  }
+
+  /* Keep the primary button but hide other links if any */
+  .nav-links a {
     display: none;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    padding: 0 10px;
+    gap: 12px;
+  }
+
+  .cta-btn,
+  .secondary-btn {
+    width: 100%;
+    padding: 14px 24px;
+  }
+
+  .primary-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h2 {
+    font-size: 28px;
   }
 }

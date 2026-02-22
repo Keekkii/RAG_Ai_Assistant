@@ -41,7 +41,7 @@ function App() {
       {showFullChat && <FullChat onClose={() => setShowFullChat(false)} />}
 
       {/* Floating Chat Widget (Always available unless full UI is open) */}
-      {!showFullChat && <ChatWidget />}
+      {!showFullChat && <ChatWidget onExpand={() => setShowFullChat(true)} />}
     </div>
   );
 }
