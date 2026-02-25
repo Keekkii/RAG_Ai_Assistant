@@ -63,43 +63,81 @@ def insert_document(url: str, title: str, content: str):
 def search_similar_documents(query: str, limit: int = 5):
     embedding = generate_embedding(query)
     vector_str = "[" + ",".join(map(str, embedding)) + "]"
-
     keywords = extract_keywords(query)
-
-    like_clauses = []
-    params = []
-
-    for word in keywords:
-        like_clauses.append("(title ILIKE %s OR content ILIKE %s)")
-        params.extend([f"%{word}%", f"%{word}%"])
-
-    keyword_sql = " OR ".join(like_clauses) if like_clauses else "FALSE"
 
     conn = get_connection()
     cursor = conn.cursor()
 
-    sql = f"""
-    SELECT id, url, title, content,
-           embedding <=> %s AS distance
-    FROM documents
-    WHERE embedding IS NOT NULL
-    ORDER BY
-        CASE
-            WHEN ({keyword_sql}) THEN 0
-            ELSE 1
-        END,
-        embedding <=> %s
-    LIMIT %s;
+    # 1. Fetch Top 20 by Vector Similarity
+    sql_vector = """
+        SELECT id, url, title, content, 
+               (1 - (embedding <=> %s)) as score
+        FROM documents
+        WHERE embedding IS NOT NULL
+        ORDER BY embedding <=> %s
+        LIMIT 20;
     """
+    cursor.execute(sql_vector, (vector_str, vector_str))
+    vector_results = cursor.fetchall()
 
-    cursor.execute(sql, [vector_str] + params + [vector_str, limit])
-
-    results = cursor.fetchall()
+    # 2. Fetch Top 20 by Keyword Matching
+    keyword_results = []
+    if keywords:
+        like_clauses = []
+        params = []
+        for word in keywords:
+            like_clauses.append("(title ILIKE %s OR content ILIKE %s)")
+            params.extend([f"%{word}%", f"%{word}%"])
+        
+        keyword_sql = " + ".join([f"(CASE WHEN {clause} THEN 1 ELSE 0 END)" for clause in like_clauses])
+        
+        sql_keyword = f"""
+            SELECT id, url, title, content,
+                   ({keyword_sql}) as score
+            FROM documents
+            WHERE { " OR ".join(like_clauses) }
+            ORDER BY ({keyword_sql}) DESC
+            LIMIT 20;
+        """
+        # We need to repeat params for: 1. SELECT, 2. WHERE, 3. ORDER BY
+        all_params = params * 3
+        cursor.execute(sql_keyword, all_params)
+        keyword_results = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return results
+    # 3. Reciprocal Rank Fusion (RRF)
+    # RRF Score = 1 / (rank + k), where k is a constant (e.g., 60)
+    k = 60
+    scores = {}
+    doc_map = {}
+
+    def add_to_scores(results):
+        for rank, doc in enumerate(results):
+            doc_id = doc["id"]
+            doc_map[doc_id] = doc
+            if doc_id not in scores:
+                scores[doc_id] = 0
+            scores[doc_id] += 1.0 / (rank + 1 + k)
+
+    add_to_scores(vector_results)
+    add_to_scores(keyword_results)
+
+    # Sort by RRF score
+    sorted_ids = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)
+    
+    # Return top 'limit' results
+    final_results = []
+    for doc_id in sorted_ids[:limit]:
+        doc = doc_map[doc_id]
+        # Attach the RRF score for visibility
+        doc["rrf_score"] = scores[doc_id]
+        # Map distance for compatibility with rag.py logs
+        doc["distance"] = 1 - doc.get("score", 0) if "score" in doc else 1.0
+        final_results.append(doc)
+
+    return final_results
 
 
 # -------------------------

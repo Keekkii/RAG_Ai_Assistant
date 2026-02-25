@@ -3,7 +3,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
 from app.database import search_similar_documents
 
-LLM_MODEL = "deepseek-r1"
+LLM_MODEL = "qwen2.5:7b"
 
 llm = ChatOllama(model=LLM_MODEL)
 
@@ -11,7 +11,8 @@ RAG_PROMPT = PromptTemplate(
     input_variables=["context", "question"],
     template="""You are an AI assistant for AlphaWave.
 
-Answer the question using ONLY the context below.
+Answer the question using ONLY the context below. 
+Provide a helpful, natural summary based on the context.
 If the answer is not contained in the context, say "I don't know."
 
 Context:
@@ -34,22 +35,29 @@ def normalize_question(question: str) -> str:
     return normalized
 
 
+
 def generate_answer(question: str) -> str:
     normalized_question = normalize_question(question)
-    results = search_similar_documents(normalized_question, limit=10)
-
-    print("\nRetrieved Chunks:\n")
-    for r in results:
-        print("TITLE:", r["title"])
-        print("DISTANCE:", r["distance"])
-        print("CONTENT PREVIEW:", r["content"][:200])
-        print("-" * 50)
-
+    
+    # Use the fast, high-quality RRF hybrid search
+    # retrieving 7 chunks instead of 5 to be safe, but still fast
+    print(f"\nPerforming fast RRF search for: {normalized_question}")
+    results = search_similar_documents(normalized_question, limit=7)
+    
     if not results:
         return "I don't know."
 
+    print("\nRetrieved Chunks (RRF Ranked):\n")
+    for r in results:
+        print(f"TITLE: {r['title']}")
+        print(f"RRF SCORE: {r.get('rrf_score', 0):.4f}")
+        # print("CONTENT PREVIEW:", r["content"][:100])
+        print("-" * 50)
+    #Go through every result we found in the database, 
+    #grab just the text content, and put it into a new list of strings.
     context = "\n\n".join([r["content"] for r in results])
 
+    # Only one LLM call now - for the final answer!
     return chain.invoke({"context": context, "question": normalized_question})
 
 
