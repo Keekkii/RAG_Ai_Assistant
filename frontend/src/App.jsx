@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import "./App.css";
 import ChatWidget from "./ChatWidget";
 import FullChat from "./FullChat";
+import Dashboard from "./Dashboard";
 
 function App() {
   const [showFullChat, setShowFullChat] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   return (
     <div className="home-container">
@@ -16,6 +18,7 @@ function App() {
             <h1>AlphaWave</h1>
           </div>
           <div className="nav-links">
+            <button className="nav-link-btn" onClick={() => setShowDashboard(true)}>Dashboard</button>
             <button className="primary-btn" onClick={() => setShowFullChat(true)}>Launch Assistant</button>
           </div>
         </div>
@@ -39,6 +42,9 @@ function App() {
 
       {/* Conditional Full UI */}
       {showFullChat && <FullChat onClose={() => setShowFullChat(false)} />}
+
+      {/* Dashboard Overlay */}
+      {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} />}
 
       {/* Floating Chat Widget (Always available unless full UI is open) */}
       {!showFullChat && <ChatWidget onExpand={() => setShowFullChat(true)} />}

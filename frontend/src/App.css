@@ -92,6 +92,20 @@ body {
   cursor: pointer;
 }
 
+.nav-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-gray);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.nav-link-btn:hover {
+  color: var(--text-white);
+}
+
 /* Hero Section */
 .hero {
   flex: 1;
