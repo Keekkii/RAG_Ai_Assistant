@@ -27,8 +27,16 @@ Answer:"""
 chain = RAG_PROMPT | llm | StrOutputParser()
 
 
+def normalize_question(question: str) -> str:
+    normalized = question.strip()
+    if len(normalized.split()) < 3:
+        return f"Explain {normalized}"
+    return normalized
+
+
 def generate_answer(question: str) -> str:
-    results = search_similar_documents(question, limit=10)
+    normalized_question = normalize_question(question)
+    results = search_similar_documents(normalized_question, limit=10)
 
     print("\nRetrieved Chunks:\n")
     for r in results:
@@ -42,7 +50,7 @@ def generate_answer(question: str) -> str:
 
     context = "\n\n".join([r["content"] for r in results])
 
-    return chain.invoke({"context": context, "question": question})
+    return chain.invoke({"context": context, "question": normalized_question})
 
 
 if __name__ == "__main__":
