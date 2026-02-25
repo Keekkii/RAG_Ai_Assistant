@@ -63,6 +63,7 @@ function Dashboard({ onClose }) {
                                 <thead>
                                     <tr>
                                         <th>Timestamp</th>
+                                        <th>User</th>
                                         <th>Query</th>
                                         <th>Latency</th>
                                         <th>Top Chunk</th>
@@ -73,6 +74,7 @@ function Dashboard({ onClose }) {
                                     {logs.map((log, idx) => (
                                         <tr key={idx} onClick={() => setSelectedLog(log)} className="log-row">
                                             <td data-label="Timestamp">{new Date(log.timestamp).toLocaleTimeString()}</td>
+                                            <td data-label="User" className="user-cell">{log.user_name || "Guest"}</td>
                                             <td data-label="Query" className="query-cell">{log.query}</td>
                                             <td data-label="Latency" className={`latency-cell ${log.latency_ms > 2000 ? 'slow' : 'fast'}`}>
                                                 {Math.round(log.latency_ms)}ms

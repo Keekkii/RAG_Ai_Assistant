@@ -39,7 +39,7 @@ def normalize_question(question: str) -> str:
 import time
 from app.logger import log_interaction
 
-def generate_answer(question: str) -> str:
+def generate_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest") -> str:
     start_time = time.time()
     normalized_question = normalize_question(question)
     
@@ -73,7 +73,9 @@ def generate_answer(question: str) -> str:
         normalized_query=normalized_question,
         results=results,
         answer=answer,
-        latency_ms=elapsed_time
+        latency_ms=elapsed_time,
+        user_email=user_email,
+        user_name=user_name
     )
 
     return answer

@@ -4,12 +4,14 @@ from datetime import datetime
 
 LOG_FILE = "chat_logs.jsonl"
 
-def log_interaction(query: str, normalized_query: str, results: list, answer: str, latency_ms: float):
+def log_interaction(query: str, normalized_query: str, results: list, answer: str, latency_ms: float, user_email: str = "Anonymous", user_name: str = "Guest"):
     """
     Logs the RAG interaction to a .jsonl file for dashboard viewing.
     """
     log_entry = {
         "timestamp": datetime.now().isoformat(),
+        "user_email": user_email,
+        "user_name": user_name,
         "query": query,
         "normalized_query": normalized_query,
         "retrieved_chunks": [

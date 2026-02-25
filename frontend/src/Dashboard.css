@@ -164,8 +164,13 @@
     background: rgba(255, 255, 255, 0.04);
 }
 
+.user-cell {
+    font-weight: 600;
+    color: var(--primary-accent);
+}
+
 .query-cell {
-    max-width: 400px;
+    max-width: 300px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

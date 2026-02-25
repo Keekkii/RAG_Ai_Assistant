@@ -27,9 +27,19 @@ def get_connection():
 # Keyword extraction (simple)
 # -------------------------
 def extract_keywords(query: str):
-    words = query.split()
-    # remove very short words like "is", "the", "of"
-    return [w.strip("?,.!") for w in words if len(w) > 3]
+    words = query.lower().split()
+    # Common words we want to ignore
+    stop_words = {"what", "where", "when", "how", "who", "this", "that", "with", "from", "the", "and", "for", "your", "with", "is", "are"}
+    
+    keywords = []
+    for w in words:
+        clean = w.strip("?,.!")
+        # Keep words that are 3+ chars and NOT in stop_words
+        # OR special important acronyms
+        if (len(clean) >= 3 and clean not in stop_words) or clean in ["ai", "io", "ux", "3d"]:
+            keywords.append(clean)
+    
+    return keywords
 
 
 # -------------------------

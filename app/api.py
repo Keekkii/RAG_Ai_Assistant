@@ -62,8 +62,15 @@ class QuestionRequest(BaseModel):
 # --- Endpoints ---
 @app.post("/chat")
 def chat(request: QuestionRequest, user=Depends(get_current_user)):
-    # You can access user.id or user.email here for logging if needed
-    answer = generate_answer(request.question)
+    # Pass user info for identified logging
+    user_email = user.email
+    user_name = user.user_metadata.get("full_name", "User")
+    
+    answer = generate_answer(
+        request.question, 
+        user_email=user_email, 
+        user_name=user_name
+    )
     return {"answer": answer}
 
 @app.get("/logs")
