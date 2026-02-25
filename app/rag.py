@@ -5,7 +5,11 @@ from app.database import search_similar_documents
 
 LLM_MODEL = "qwen2.5:7b"
 
-llm = ChatOllama(model=LLM_MODEL)
+llm = ChatOllama(
+    model=LLM_MODEL,
+    num_ctx=4096,     # Optimized context window for speed and accuracy
+    temperature=0     # Factual responses, no creative drifting
+)
 
 RAG_PROMPT = PromptTemplate(
     input_variables=["context", "question"],
@@ -44,9 +48,9 @@ def generate_answer(question: str, user_email: str = "Anonymous", user_name: str
     normalized_question = normalize_question(question)
     
     # Use the fast, high-quality RRF hybrid search
-    # retrieving 7 chunks instead of 5 to be safe, but still fast
+    # retrieving 5 chunks for maximum speed while keeping high relevance
     print(f"\nPerforming fast RRF search for: {normalized_question}")
-    results = search_similar_documents(normalized_question, limit=7)
+    results = search_similar_documents(normalized_question, limit=5)
     
     if not results:
         return "I don't know."
