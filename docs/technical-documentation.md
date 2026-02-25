@@ -42,7 +42,7 @@ The core intelligence layer. Uses **LangChain LCEL** (Expression Language) to de
 
 **Chain Definition:**
 ```python
-chain = PromptTemplate | ChatOllama(model="llama3") | StrOutputParser()
+chain = PromptTemplate | ChatOllama(model="deepseek-r1") | StrOutputParser()
 ```
 
 **Flow:**
@@ -118,8 +118,8 @@ Wraps LangChain's `RecursiveCharacterTextSplitter` to split long documents into 
 
 | Parameter | Value |
 |-----------|-------|
-| `chunk_size` | 400 characters |
-| `chunk_overlap` | 100 characters |
+| `chunk_size` | 600 characters |
+| `chunk_overlap` | 300 characters |
 
 The recursive splitter tries to split on paragraphs, then sentences, then words — preserving semantic coherence better than a simple character split.
 
@@ -206,7 +206,7 @@ User types question → Fetch POST /chat
       → Build context string from top 10 chunks
       → chain.invoke({context, question})               [LangChain LCEL]
         → PromptTemplate formats prompt
-        → ChatOllama sends to llama3 via Ollama
+        → ChatOllama sends to deepseek-r1 via Ollama
         → StrOutputParser extracts string
       → return answer string
   → FastAPI returns { "answer": "..." }
@@ -235,7 +235,7 @@ The `pgvector` extension enables the `VECTOR` column type and the `<=>` cosine d
 Ollama serves both models locally over HTTP. Required models:
 
 ```bash
-ollama pull llama3           # Text generation
+ollama pull deepseek-r1           # Text generation
 ollama pull nomic-embed-text # Embedding generation (768-dim)
 ```
 
@@ -290,3 +290,4 @@ ollama pull nomic-embed-text # Embedding generation (768-dim)
 - **CORS**: Currently set to `allow_origins=["*"]`. Must be restricted to the frontend origin in production.
 - **Database credentials**: Currently hardcoded in `database.py`. Should be moved to a `.env` file loaded via `python-dotenv` before any public deployment.
 - **Ollama default port**: `11434` — not exposed externally; only the backend communicates with it locally.
+

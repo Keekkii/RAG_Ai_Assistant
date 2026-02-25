@@ -3,7 +3,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_ollama import ChatOllama
 from app.database import search_similar_documents
 
-LLM_MODEL = "llama3"
+LLM_MODEL = "deepseek-r1"
 
 llm = ChatOllama(model=LLM_MODEL)
 

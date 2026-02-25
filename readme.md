@@ -25,7 +25,7 @@ Users ask questions via a chat interface. The system searches a private knowledg
 | Component        | Technology                        |
 |------------------|-----------------------------------|
 | Orchestration    | LangChain (LCEL)                  |
-| LLM              | Ollama — llama3                   |
+| LLM              | Ollama — deepseek-r1                   |
 | Embeddings       | Ollama — nomic-embed-text (768-d) |
 | Vector Similarity| Cosine Distance via pgvector      |
 | Web Scraping     | BeautifulSoup + Requests          |
@@ -65,7 +65,7 @@ docker run --name alphawave-db \
 Pull the required models via Ollama:
 
 ```bash
-ollama pull llama3
+ollama pull deepseek-r1
 ollama pull nomic-embed-text
 ```
 
@@ -104,3 +104,4 @@ Open `http://localhost:5173` in a browser.
 ## Documentation
 
 Full technical documentation is available in [`docs/technical-documentation.md`](docs/technical-documentation.md).
+
