@@ -1,18 +1,26 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./Dashboard.css";
+import { supabase } from "./supabaseClient";
 
-const Dashboard = ({ onClose }) => {
+function Dashboard({ onClose }) {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedLog, setSelectedLog] = useState(null);
 
     const fetchLogs = async () => {
         try {
-            const response = await fetch("http://localhost:8000/logs");
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const response = await fetch("http://localhost:8000/logs", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
             const data = await response.json();
             setLogs(data);
         } catch (error) {
-            console.error("Error fetching logs:", error);
+            console.error("Failed to fetch logs:", error);
         } finally {
             setLoading(false);
         }
@@ -20,7 +28,7 @@ const Dashboard = ({ onClose }) => {
 
     useEffect(() => {
         fetchLogs();
-        const interval = setInterval(fetchLogs, 5000); // Auto refresh every 5s
+        const interval = setInterval(fetchLogs, 5000); // 5s refresh
         return () => clearInterval(interval);
     }, []);
 
@@ -28,46 +36,46 @@ const Dashboard = ({ onClose }) => {
         <div className="dashboard-overlay">
             <div className="dashboard-window">
                 <header className="dashboard-header">
-                    <div className="header-info">
-                        <h2>Activity Dashboard</h2>
-                        <span className="live-badge">LIVE</span>
+                    <div className="header-left">
+                        <h2>System Analytics</h2>
+                        <span className="live-indicator">LIVE</span>
                     </div>
-                    <button className="close-btn" onClick={onClose}>&times;</button>
+                    <button className="dashboard-close" onClick={onClose}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </button>
                 </header>
 
                 <div className="dashboard-content">
-                    {loading ? (
-                        <div className="loading-state">Loading logs...</div>
-                    ) : logs.length === 0 ? (
-                        <div className="empty-state">No activity logs found.</div>
+                    {loading && logs.length === 0 ? (
+                        <div className="dashboard-loading">Loading analytics...</div>
                     ) : (
-                        <div className="logs-table-container">
-                            <table className="logs-table">
+                        <div className="log-table-container">
+                            <table className="log-table">
                                 <thead>
                                     <tr>
                                         <th>Timestamp</th>
                                         <th>Query</th>
                                         <th>Latency</th>
                                         <th>Top Chunk</th>
-                                        <th>RRF</th>
+                                        <th>RRF Score</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {logs.map((log, index) => (
-                                        <tr
-                                            key={index}
-                                            className={`log-row ${selectedLog === log ? 'active' : ''}`}
-                                            onClick={() => setSelectedLog(log)}
-                                        >
+                                    {logs.map((log, idx) => (
+                                        <tr key={idx} onClick={() => setSelectedLog(log)} className="log-row">
                                             <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
-                                            <td className="query-cell" title={log.query}>{log.query}</td>
-                                            <td>
-                                                <span className={`latency-pill ${log.latency_ms > 10000 ? "slow" : "fast"}`}>
-                                                    {(log.latency_ms / 1000).toFixed(1)}s
-                                                </span>
+                                            <td className="query-cell">{log.query}</td>
+                                            <td className={`latency-cell ${log.latency_ms > 2000 ? 'slow' : 'fast'}`}>
+                                                {Math.round(log.latency_ms)}ms
                                             </td>
-                                            <td className="chunk-cell">{log.retrieved_chunks?.[0]?.title || "N/A"}</td>
-                                            <td className="score-cell">{log.retrieved_chunks?.[0]?.rrf_score?.toFixed(4) || "0.0000"}</td>
+                                            <td className="chunk-cell">
+                                                {log.retrieved_chunks?.[0]?.title || "N/A"}
+                                            </td>
+                                            <td className="score-cell">
+                                                {log.retrieved_chunks?.[0]?.rrf_score?.toFixed(4) || "0.0000"}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -75,23 +83,24 @@ const Dashboard = ({ onClose }) => {
                         </div>
                     )}
                 </div>
+            </div>
 
-                {selectedLog && (
-                    <div className="json-viewer-overlay" onClick={() => setSelectedLog(null)}>
-                        <div className="json-viewer-content" onClick={e => e.stopPropagation()}>
-                            <header className="viewer-header">
-                                <h3>Raw Log View</h3>
-                                <button onClick={() => setSelectedLog(null)}>&times;</button>
-                            </header>
-                            <pre>
-                                {JSON.stringify(selectedLog, null, 2)}
-                            </pre>
+            {/* Custom JSON Modal */}
+            {selectedLog && (
+                <div className="detail-modal-overlay" onClick={() => setSelectedLog(null)}>
+                    <div className="detail-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="detail-modal-header">
+                            <h3>Raw Log Interaction</h3>
+                            <button className="detail-modal-close" onClick={() => setSelectedLog(null)}>×</button>
+                        </div>
+                        <div className="json-viewer">
+                            <pre>{JSON.stringify(selectedLog, null, 2)}</pre>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
-};
+}
 
 export default Dashboard;

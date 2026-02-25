@@ -106,6 +106,22 @@ body {
   color: var(--text-white);
 }
 
+.user-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-accent);
+  background: rgba(0, 194, 255, 0.08);
+  padding: 5px 14px;
+  border-radius: 50px;
+  border: 1px solid rgba(0, 194, 255, 0.2);
+  transition: all 0.2s;
+}
+
+.user-badge:hover {
+  background: rgba(0, 194, 255, 0.15);
+  transform: translateY(-1px);
+}
+
 /* Hero Section */
 .hero {
   flex: 1;

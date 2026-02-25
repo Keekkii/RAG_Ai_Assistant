@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./FullChat.css";
+import { supabase } from "./supabaseClient";
 
 function FullChat({ onClose }) {
     const [messages, setMessages] = useState([]);
@@ -17,9 +18,15 @@ function FullChat({ onClose }) {
         setLoading(true);
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
             const response = await fetch("http://127.0.0.1:8000/chat", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({ question })
             });
 
