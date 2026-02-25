@@ -65,15 +65,36 @@ class HistoryRequest(BaseModel):
 
 # --- Endpoints ---
 @app.post("/chat")
-def chat(request: QuestionRequest, user=Depends(get_current_user)):
-    # Pass user info for identified logging
+def chat(request: QuestionRequest, token: str = Depends(oauth2_scheme), user=Depends(get_current_user)):
+    # 1. Fetch recent history for Contextual Memory
+    chat_history_str = ""
+    try:
+        supabase.postgrest.auth(token)
+        history_res = supabase.table("chat_history") \
+            .select("role", "content") \
+            .eq("user_id", str(user.id)) \
+            .order("created_at", desc=True) \
+            .limit(10) \
+            .execute()
+        
+        # Format history: Assistant: ..., User: ... (reversed to get chronological)
+        history_parts = []
+        for msg in reversed(history_res.data):
+            role = "AI" if msg['role'] == "assistant" else "User"
+            history_parts.append(f"{role}: {msg['content']}")
+        chat_history_str = "\n".join(history_parts)
+    except Exception as e:
+        print(f"Memory Fetch Warning: {e}")
+
+    # 2. Generate answer with memory
     user_email = user.email
     user_name = user.user_metadata.get("full_name", "User")
     
     answer = generate_answer(
         request.question, 
         user_email=user_email, 
-        user_name=user_name
+        user_name=user_name,
+        chat_history=chat_history_str
     )
     return {"answer": answer}
 

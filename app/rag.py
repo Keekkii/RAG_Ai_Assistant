@@ -12,18 +12,21 @@ llm = ChatOllama(
 )
 
 RAG_PROMPT = PromptTemplate(
-    input_variables=["context", "question"],
-    template="""You are an AI assistant for AlphaWave.
+    input_variables=["context", "chat_history", "question"],
+    template="""You are the AlphaWave AI Assistant. 
 
-Answer the question using ONLY the context below. 
-Provide a helpful, natural summary based on the context.
-If the answer is not contained in the context, say "I don't know."
+STRICT INSTRUCTIONS:
+1. If the user uses pronouns (like "his", "it", or "that"), use the Chat History below to identify who or what they are talking about.
+2. Answer the question DIRECTLY. Do not say "To answer your question" or explain your reasoning.
+3. Be concise and professional.
+
+Chat History:
+{chat_history}
 
 Context:
 {context}
 
-Question:
-{question}
+User Question: {question}
 
 Answer:"""
 )
@@ -43,12 +46,13 @@ def normalize_question(question: str) -> str:
 import time
 from app.logger import log_interaction
 
-def generate_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest") -> str:
+def generate_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest", chat_history: str = "") -> str:
     start_time = time.time()
     normalized_question = normalize_question(question)
     
     # Use the fast, high-quality RRF hybrid search
     # retrieving 5 chunks for maximum speed while keeping high relevance
+    print(f"DEBUG: Contextual Memory (History Buffer):\n{chat_history}\n")
     print(f"\nPerforming fast RRF search for: {normalized_question}")
     results = search_similar_documents(normalized_question, limit=5)
     
@@ -59,15 +63,16 @@ def generate_answer(question: str, user_email: str = "Anonymous", user_name: str
     for r in results:
         print(f"TITLE: {r['title']}")
         print(f"RRF SCORE: {r.get('rrf_score', 0):.4f}")
-        # print("CONTENT PREVIEW:", r["content"][:100])
         print("-" * 50)
-        
-    # Go through every result we found in the database, 
-    # grab just the text content, and put it into a new list of strings.
+
     context = "\n\n".join([r["content"] for r in results])
 
     # Only one LLM call now - for the final answer!
-    answer = chain.invoke({"context": context, "question": normalized_question})
+    answer = chain.invoke({
+        "context": context, 
+        "chat_history": chat_history, 
+        "question": normalized_question
+    })
     
     elapsed_time = (time.time() - start_time) * 1000  # ms
     
