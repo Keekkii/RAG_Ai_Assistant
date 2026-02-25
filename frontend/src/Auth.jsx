@@ -67,7 +67,7 @@ const Auth = ({ onAuthSuccess }) => {
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
                                 required
-                                placeholder="Kevin Malnar"
+                                placeholder="John Doe"
                             />
                         </div>
                     )}
