@@ -8,8 +8,56 @@ const ChatWidget = ({ onExpand }) => {
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+
     const messagesEndRef = useRef(null);
     const textareaRef = useRef(null);
+
+    // Fetch history from backend
+    const fetchHistory = async () => {
+        setIsFetchingHistory(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (!token) return;
+
+            const response = await fetch('http://127.0.0.1:8000/history', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok && Array.isArray(data)) {
+                setMessages(data);
+            } else {
+                console.error('History API error:', data);
+                setMessages([]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch history:', error);
+        } finally {
+            setIsFetchingHistory(false);
+        }
+    };
+
+    const saveToHistory = async (role, content) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(`http://127.0.0.1:8000/history`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ role, content })
+            });
+        } catch (error) {
+            console.error('Failed to save to history:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
 
     // Auto-scroll to bottom
     const scrollToBottom = () => {
@@ -43,6 +91,9 @@ const ChatWidget = ({ onExpand }) => {
             const { data: { session } } = await supabase.auth.getSession();
             const token = session?.access_token;
 
+            // Save user message to DB
+            saveToHistory('user', userMsg.content);
+
             const response = await fetch('http://127.0.0.1:8000/chat', {
                 method: 'POST',
                 headers: {
@@ -57,6 +108,9 @@ const ChatWidget = ({ onExpand }) => {
             const data = await response.json();
             const aiMsg = { role: 'assistant', content: data.answer };
             setMessages((prev) => [...prev, aiMsg]);
+
+            // Save AI message to DB
+            saveToHistory('assistant', aiMsg.content);
         } catch (error) {
             console.error('Error sending message:', error);
             setMessages((prev) => [

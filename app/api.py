@@ -59,6 +59,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 class QuestionRequest(BaseModel):
     question: str
 
+class HistoryRequest(BaseModel):
+    role: str
+    content: str
+
 # --- Endpoints ---
 @app.post("/chat")
 def chat(request: QuestionRequest, user=Depends(get_current_user)):
@@ -72,6 +76,46 @@ def chat(request: QuestionRequest, user=Depends(get_current_user)):
         user_name=user_name
     )
     return {"answer": answer}
+
+@app.get("/history")
+def get_history(token: str = Depends(oauth2_scheme), user=Depends(get_current_user)):
+    """
+    Fetches the chat history for the logged-in user.
+    Uses the user's token to satisfy RLS.
+    """
+    try:
+        # We use a fresh client or set the token for RLS
+        # Supabase Python SDK handles token headers via postgrest.auth(token)
+        supabase.postgrest.auth(token)
+        
+        response = supabase.table("chat_history") \
+            .select("*") \
+            .eq("user_id", str(user.id)) \
+            .order("created_at", desc=False) \
+            .execute()
+        return response.data
+    except Exception as e:
+        print(f"DEBUG: get_history error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"History Fetch Error: {str(e)}")
+
+@app.post("/history")
+def save_history(request: HistoryRequest, token: str = Depends(oauth2_scheme), user=Depends(get_current_user)):
+    """
+    Saves a new chat message to the history table.
+    """
+    try:
+        supabase.postgrest.auth(token)
+        
+        data = {
+            "user_id": str(user.id),
+            "role": request.role,
+            "content": request.content
+        }
+        response = supabase.table("chat_history").insert(data).execute()
+        return response.data
+    except Exception as e:
+        print(f"DEBUG: save_history error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"History Save Error: {str(e)}")
 
 @app.get("/logs")
 def get_logs(user=Depends(get_current_user)):

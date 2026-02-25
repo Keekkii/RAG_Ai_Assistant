@@ -6,8 +6,54 @@ function FullChat({ onClose }) {
     const [messages, setMessages] = useState([]);
     const [question, setQuestion] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingHistory, setLoadingHistory] = useState(false);
     const chatEndRef = useRef(null);
     const textareaRef = useRef(null);
+
+    const fetchHistory = async () => {
+        setLoadingHistory(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (!token) return;
+
+            const response = await fetch("http://127.0.0.1:8000/history", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok && Array.isArray(data)) {
+                setMessages(data);
+            } else {
+                console.warn("Invalid history format or error", data);
+                setMessages([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch history:", error);
+        } finally {
+            setLoadingHistory(false);
+        }
+    };
+
+    const saveToHistory = async (role, content) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch("http://127.0.0.1:8000/history", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ role, content })
+            });
+        } catch (error) {
+            console.error("Failed to save to history:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
 
     const askQuestion = async () => {
         if (!question.trim() || loading) return;
@@ -21,6 +67,9 @@ function FullChat({ onClose }) {
             const { data: { session } } = await supabase.auth.getSession();
             const token = session?.access_token;
 
+            // Save user msg to DB
+            saveToHistory("user", userMessage.content);
+
             const response = await fetch("http://127.0.0.1:8000/chat", {
                 method: "POST",
                 headers: {
@@ -33,6 +82,9 @@ function FullChat({ onClose }) {
             const data = await response.json();
             const aiMessage = { role: "assistant", content: data.answer };
             setMessages((prev) => [...prev, aiMessage]);
+
+            // Save AI msg to DB
+            saveToHistory("assistant", aiMessage.content);
         } catch (error) {
             setMessages((prev) => [
                 ...prev,
@@ -82,7 +134,11 @@ function FullChat({ onClose }) {
 
                 <main className="full-chat-messages">
                     <div className="messages-inner">
-                        {messages.length === 0 && (
+                        {loadingHistory && (
+                            <div className="full-chat-loading">Restoring your conversation...</div>
+                        )}
+
+                        {!loadingHistory && messages.length === 0 && (
                             <div className="full-message ai-full">
                                 Hello! I'm AlphaWave AI. How can I assist you today?
                             </div>
