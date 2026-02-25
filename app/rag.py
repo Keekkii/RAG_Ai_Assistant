@@ -36,7 +36,11 @@ def normalize_question(question: str) -> str:
 
 
 
+import time
+from app.logger import log_interaction
+
 def generate_answer(question: str) -> str:
+    start_time = time.time()
     normalized_question = normalize_question(question)
     
     # Use the fast, high-quality RRF hybrid search
@@ -53,12 +57,26 @@ def generate_answer(question: str) -> str:
         print(f"RRF SCORE: {r.get('rrf_score', 0):.4f}")
         # print("CONTENT PREVIEW:", r["content"][:100])
         print("-" * 50)
-    #Go through every result we found in the database, 
-    #grab just the text content, and put it into a new list of strings.
+        
+    # Go through every result we found in the database, 
+    # grab just the text content, and put it into a new list of strings.
     context = "\n\n".join([r["content"] for r in results])
 
     # Only one LLM call now - for the final answer!
-    return chain.invoke({"context": context, "question": normalized_question})
+    answer = chain.invoke({"context": context, "question": normalized_question})
+    
+    elapsed_time = (time.time() - start_time) * 1000  # ms
+    
+    # Log the interaction for the dashboard
+    log_interaction(
+        query=question,
+        normalized_query=normalized_question,
+        results=results,
+        answer=answer,
+        latency_ms=elapsed_time
+    )
+
+    return answer
 
 
 if __name__ == "__main__":
