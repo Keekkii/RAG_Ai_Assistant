@@ -240,6 +240,10 @@ body {
     gap: 8px;
   }
 
+  .user-badge {
+    display: none;
+  }
+
   /* Keep the primary button but hide other links if any */
   .nav-links a {
     display: none;

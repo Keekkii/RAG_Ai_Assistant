@@ -50,7 +50,6 @@ function App() {
             </span>
             <button className="nav-link-btn" onClick={() => setShowDashboard(true)}>Dashboard</button>
             <button className="nav-link-btn" onClick={handleLogout}>Logout</button>
-            <button className="primary-btn" onClick={() => setShowFullChat(true)}>Launch Assistant</button>
           </div>
         </div>
       </nav>

@@ -4,284 +4,345 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(8px);
-    z-index: 2000;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
+    z-index: 5000;
+    padding: 20px;
 }
 
 .dashboard-window {
-    width: 90%;
+    width: 100%;
     max-width: 1100px;
-    height: 80vh;
-    background: #111111;
+    height: 85vh;
+    background: #0f172a;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    border-radius: 24px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+    animation: modalScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideUp {
+@keyframes modalScale {
     from {
-        transform: translateY(30px);
+        transform: scale(0.95);
         opacity: 0;
     }
 
     to {
-        transform: translateY(0);
+        transform: scale(1);
         opacity: 1;
     }
 }
 
 .dashboard-header {
-    padding: 1.5rem 2rem;
-    background: rgba(255, 255, 255, 0.03);
+    padding: 24px 32px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.header-info {
+.header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 16px;
 }
 
-.header-info h2 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #ffffff;
+.header-left h2 {
+    font-size: 20px;
+    font-weight: 700;
     margin: 0;
 }
 
-.live-badge {
+.live-indicator {
     background: rgba(255, 59, 48, 0.1);
     color: #ff3b30;
     padding: 4px 10px;
     border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
-.live-badge::before {
+.live-indicator::before {
     content: "";
     width: 6px;
     height: 6px;
     background: #ff3b30;
     border-radius: 50%;
-    animation: pulse 1.5s infinite;
+    animation: pulsePulse 1.5s infinite;
 }
 
-@keyframes pulse {
+@keyframes pulsePulse {
     0% {
-        transform: scale(1);
         opacity: 1;
+        transform: scale(1);
     }
 
     50% {
-        transform: scale(1.5);
         opacity: 0.5;
+        transform: scale(1.3);
     }
 
     100% {
-        transform: scale(1);
         opacity: 1;
+        transform: scale(1);
     }
 }
 
-.close-btn {
-    background: transparent;
+.dashboard-close {
+    background: rgba(255, 255, 255, 0.05);
     border: none;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 2rem;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
 }
 
-.close-btn:hover {
-    color: #ffffff;
+.dashboard-close:hover {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff3b30;
 }
 
 .dashboard-content {
     flex: 1;
-    padding: 2rem;
     overflow-y: auto;
+    padding: 24px;
 }
 
-.logs-table-container {
-    width: 100%;
+/* Table Styling */
+.log-table-container {
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.2);
+    overflow: hidden;
 }
 
-.logs-table {
+.log-table {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
 }
 
-.logs-table th {
-    padding: 1rem;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.4);
+.log-table th {
+    padding: 16px 20px;
+    font-size: 12px;
     font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
     letter-spacing: 1px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.logs-table td {
-    padding: 1.25rem 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.95rem;
+.log-table td {
+    padding: 18px 20px;
+    font-size: 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.query-cell {
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 500;
-}
-
-.latency-pill {
-    padding: 4px 12px;
-    border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.latency-pill.fast {
-    background: rgba(52, 199, 89, 0.1);
-    color: #34c759;
-}
-
-.latency-pill.slow {
-    background: rgba(255, 159, 10, 0.1);
-    color: #ff9f0a;
-}
-
-.chunk-cell {
-    color: #007aff;
-    font-size: 0.9rem;
-}
-
-.score-cell {
-    font-family: monospace;
-    color: #ffffff;
-}
-
 .log-row {
-    transition: background 0.2s ease;
     cursor: pointer;
+    transition: all 0.2s;
 }
 
 .log-row:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
 }
 
-.log-row.active {
-    background: rgba(0, 194, 255, 0.1);
-    border-left: 3px solid #00c2ff;
+.query-cell {
+    max-width: 400px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
 }
 
-.loading-state,
-.empty-state {
+.latency-cell {
+    font-weight: 600;
+}
+
+.latency-cell.fast {
+    color: #34c759;
+}
+
+.latency-cell.slow {
+    color: #ff9f10;
+}
+
+.chunk-cell {
+    color: var(--primary-accent);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.score-cell {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Empty/Loading state */
+.dashboard-empty {
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 1.1rem;
-}
-
-/* JSON Viewer */
-.json-viewer-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.82);
-    backdrop-filter: blur(8px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    z-index: 100;
-    animation: fadeIn 0.2s ease;
-}
-
-.json-viewer-content {
-    width: 100%;
-    max-width: 850px;
-    max-height: 90%;
-    background: #161616;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text-gray);
 }
 
-.viewer-header {
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--primary-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Overrides */
+@media (max-width: 850px) {
+    .dashboard-overlay {
+        padding: 0;
+    }
+
+    .dashboard-window {
+        height: 100vh;
+        border-radius: 0;
+        border: none;
+    }
+
+    .dashboard-header {
+        padding: 16px 20px;
+    }
+
+    /* Pivot Table into Cards */
+    .log-table thead {
+        display: none;
+    }
+
+    .log-row {
+        display: block;
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        margin-bottom: 2px;
+    }
+
+    .log-table td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border: none;
+        font-size: 13px;
+        text-align: right;
+    }
+
+    .log-table td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 11px;
+        text-transform: uppercase;
+        text-align: left;
+    }
+
+    .query-cell {
+        max-width: 60%;
+        white-space: normal;
+    }
+
+    .chunk-cell {
+        max-width: 60%;
+    }
+}
+
+/* JSON Modal Styling */
+.detail-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 6000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.detail-modal-content {
+    width: 100%;
+    max-width: 800px;
+    background: #0a0a0a;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+}
+
+.detail-modal-header {
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.03);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.viewer-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #fff;
-}
-
-.viewer-header button {
+.detail-modal-close {
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 1.8rem;
+    color: white;
+    font-size: 28px;
     cursor: pointer;
-    line-height: 1;
 }
 
-.viewer-header button:hover {
-    color: #fff;
-}
-
-.json-viewer-content pre {
-    padding: 1.5rem;
-    margin: 0;
+.json-viewer {
+    padding: 20px;
+    max-height: 70vh;
     overflow: auto;
-    font-family: 'Fira Code', 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.json-viewer pre {
+    margin: 0;
+    color: var(--primary-accent);
+    font-family: 'Fira Code', monospace;
     font-size: 13px;
-    color: #00c2ff;
     line-height: 1.6;
-    background: #0a0a0a;
-    flex: 1;
+}
+
+@media (max-width: 480px) {
+    .header-left h2 {
+        font-size: 16px;
+    }
+
+    .dashboard-content {
+        padding: 12px;
+    }
 }

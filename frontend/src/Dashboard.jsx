@@ -49,7 +49,14 @@ function Dashboard({ onClose }) {
 
                 <div className="dashboard-content">
                     {loading && logs.length === 0 ? (
-                        <div className="dashboard-loading">Loading analytics...</div>
+                        <div className="dashboard-empty">
+                            <div className="loading-spinner"></div>
+                            <p>Loading analytics...</p>
+                        </div>
+                    ) : logs.length === 0 ? (
+                        <div className="dashboard-empty">
+                            <p>No interaction logs found yet.</p>
+                        </div>
                     ) : (
                         <div className="log-table-container">
                             <table className="log-table">
@@ -65,15 +72,15 @@ function Dashboard({ onClose }) {
                                 <tbody>
                                     {logs.map((log, idx) => (
                                         <tr key={idx} onClick={() => setSelectedLog(log)} className="log-row">
-                                            <td>{new Date(log.timestamp).toLocaleTimeString()}</td>
-                                            <td className="query-cell">{log.query}</td>
-                                            <td className={`latency-cell ${log.latency_ms > 2000 ? 'slow' : 'fast'}`}>
+                                            <td data-label="Timestamp">{new Date(log.timestamp).toLocaleTimeString()}</td>
+                                            <td data-label="Query" className="query-cell">{log.query}</td>
+                                            <td data-label="Latency" className={`latency-cell ${log.latency_ms > 2000 ? 'slow' : 'fast'}`}>
                                                 {Math.round(log.latency_ms)}ms
                                             </td>
-                                            <td className="chunk-cell">
+                                            <td data-label="Top Chunk" className="chunk-cell">
                                                 {log.retrieved_chunks?.[0]?.title || "N/A"}
                                             </td>
-                                            <td className="score-cell">
+                                            <td data-label="Score" className="score-cell">
                                                 {log.retrieved_chunks?.[0]?.rrf_score?.toFixed(4) || "0.0000"}
                                             </td>
                                         </tr>
