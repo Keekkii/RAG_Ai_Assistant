@@ -87,14 +87,17 @@ const ChatWidget = ({ onExpand }) => {
         setInputValue('');
         setIsLoading(true);
 
+        // Save user message to DB
+        saveToHistory('user', userMsg.content);
+
+        // Add empty placeholder for the AI response that will be filled token-by-token
+        setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const token = session?.access_token;
 
-            // Save user message to DB
-            saveToHistory('user', userMsg.content);
-
-            const response = await fetch('http://127.0.0.1:8000/chat', {
+            const response = await fetch('http://127.0.0.1:8000/chat/stream', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -103,20 +106,54 @@ const ChatWidget = ({ onExpand }) => {
                 body: JSON.stringify({ question: userMsg.content }),
             });
 
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
-            const data = await response.json();
-            const aiMsg = { role: 'assistant', content: data.answer };
-            setMessages((prev) => [...prev, aiMsg]);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+            let fullAnswer = '';
 
-            // Save AI message to DB
-            saveToHistory('assistant', aiMsg.content);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const events = buffer.split('\n\n');
+                buffer = events.pop(); // keep any incomplete trailing event
+
+                for (const event of events) {
+                    if (!event.trim()) continue;
+                    const lines = event.split('\n');
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const payload = line.slice(6);
+
+                        if (payload === '[DONE]') {
+                            setIsLoading(false);
+                            saveToHistory('assistant', fullAnswer);
+                            return;
+                        }
+                        if (payload.startsWith('[ERROR]')) {
+                            throw new Error(payload.slice(8));
+                        }
+
+                        const token = payload.replace(/\\n/g, '\n');
+                        fullAnswer += token;
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = { role: 'assistant', content: fullAnswer };
+                            return updated;
+                        });
+                    }
+                }
+            }
         } catch (error) {
             console.error('Error sending message:', error);
-            setMessages((prev) => [
-                ...prev,
-                { role: 'assistant', content: 'Connection error. Please try again later.' }
-            ]);
+            setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: 'assistant', content: 'Connection error. Please try again later.' };
+                return updated;
+            });
         } finally {
             setIsLoading(false);
         }
@@ -172,13 +209,16 @@ const ChatWidget = ({ onExpand }) => {
                             </div>
                         )}
 
-                        {messages.map((msg, index) => (
-                            <div key={index} className={`message ${msg.role === 'user' ? 'user' : 'ai'}`}>
-                                {msg.content}
-                            </div>
-                        ))}
+                        {messages.map((msg, index) => {
+                            if (isLoading && index === messages.length - 1 && msg.role === 'assistant' && msg.content === '') return null;
+                            return (
+                                <div key={index} className={`message ${msg.role === 'user' ? 'user' : 'ai'}`}>
+                                    {msg.content}
+                                </div>
+                            );
+                        })}
 
-                        {isLoading && (
+                        {isLoading && messages[messages.length - 1]?.content === '' && (
                             <div className="message ai">
                                 <div className="typing-indicator">
                                     <div className="dot"></div>

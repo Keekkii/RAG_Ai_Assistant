@@ -63,33 +63,72 @@ function FullChat({ onClose }) {
         setQuestion("");
         setLoading(true);
 
+        // Save user msg to DB
+        saveToHistory("user", userMessage.content);
+
+        // Add empty placeholder for the AI response
+        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const token = session?.access_token;
 
-            // Save user msg to DB
-            saveToHistory("user", userMessage.content);
-
-            const response = await fetch("http://127.0.0.1:8000/chat", {
+            const response = await fetch("http://127.0.0.1:8000/chat/stream", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({ question })
+                body: JSON.stringify({ question: userMessage.content })
             });
 
-            const data = await response.json();
-            const aiMessage = { role: "assistant", content: data.answer };
-            setMessages((prev) => [...prev, aiMessage]);
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
-            // Save AI msg to DB
-            saveToHistory("assistant", aiMessage.content);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+            let fullAnswer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const events = buffer.split("\n\n");
+                buffer = events.pop(); // keep any incomplete trailing event
+
+                for (const event of events) {
+                    if (!event.trim()) continue;
+                    const lines = event.split("\n");
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) continue;
+                        const payload = line.slice(6);
+
+                        if (payload === "[DONE]") {
+                            setLoading(false);
+                            saveToHistory("assistant", fullAnswer);
+                            return;
+                        }
+                        if (payload.startsWith("[ERROR]")) {
+                            throw new Error(payload.slice(8));
+                        }
+
+                        const tokenText = payload.replace(/\\n/g, "\n");
+                        fullAnswer += tokenText;
+                        setMessages((prev) => {
+                            const updated = [...prev];
+                            updated[updated.length - 1] = { role: "assistant", content: fullAnswer };
+                            return updated;
+                        });
+                    }
+                }
+            }
         } catch (error) {
-            setMessages((prev) => [
-                ...prev,
-                { role: "assistant", content: "Sorry, I'm having trouble connecting to the server. Please check if the backend is running." }
-            ]);
+            setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: "Sorry, I'm having trouble connecting to the server. Please check if the backend is running." };
+                return updated;
+            });
         } finally {
             setLoading(false);
         }
@@ -144,16 +183,19 @@ function FullChat({ onClose }) {
                             </div>
                         )}
 
-                        {messages.map((msg, index) => (
-                            <div
-                                key={index}
-                                className={`full-message ${msg.role === "user" ? "user-full" : "ai-full"}`}
-                            >
-                                {msg.content}
-                            </div>
-                        ))}
+                        {messages.map((msg, index) => {
+                            if (loading && index === messages.length - 1 && msg.role === "assistant" && msg.content === "") return null;
+                            return (
+                                <div
+                                    key={index}
+                                    className={`full-message ${msg.role === "user" ? "user-full" : "ai-full"}`}
+                                >
+                                    {msg.content}
+                                </div>
+                            );
+                        })}
 
-                        {loading && (
+                        {loading && messages[messages.length - 1]?.content === "" && (
                             <div className="full-message ai-full full-typing">
                                 <div className="full-dot"></div>
                                 <div className="full-dot"></div>

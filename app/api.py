@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from supabase import create_client, Client
-from app.rag import generate_answer
+from app.rag import generate_answer, stream_answer
 from dotenv import load_dotenv
 import json
 import os
@@ -97,6 +98,37 @@ def chat(request: QuestionRequest, token: str = Depends(oauth2_scheme), user=Dep
         chat_history=chat_history_str
     )
     return {"answer": answer}
+
+@app.post("/chat/stream")
+def chat_stream(request: QuestionRequest, token: str = Depends(oauth2_scheme), user=Depends(get_current_user)):
+    chat_history_str = ""
+    try:
+        supabase.postgrest.auth(token)
+        history_res = supabase.table("chat_history") \
+            .select("role", "content") \
+            .eq("user_id", str(user.id)) \
+            .order("created_at", desc=True) \
+            .limit(10) \
+            .execute()
+
+        history_parts = []
+        for msg in reversed(history_res.data):
+            role = "AI" if msg['role'] == "assistant" else "User"
+            history_parts.append(f"{role}: {msg['content']}")
+        chat_history_str = "\n".join(history_parts)
+    except Exception as e:
+        print(f"Memory Fetch Warning: {e}")
+
+    return StreamingResponse(
+        stream_answer(
+            request.question,
+            user_email=user.email,
+            user_name=user.user_metadata.get("full_name", "User"),
+            chat_history=chat_history_str
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
 
 @app.get("/history")
 def get_history(token: str = Depends(oauth2_scheme), user=Depends(get_current_user)):

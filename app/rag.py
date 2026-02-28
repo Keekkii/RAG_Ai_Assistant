@@ -13,7 +13,7 @@ llm = ChatOllama(
 
 RAG_PROMPT = PromptTemplate(
     input_variables=["context", "chat_history", "question"],
-    template="""You are the AlphaWave AI Assistant. 
+    template="""You are the AlphaWave AI Assistant.
 
 STRICT INSTRUCTIONS:
 1. If the user uses pronouns (like "his", "it", or "that"), use the Chat History below to identify who or what they are talking about.
@@ -88,6 +88,59 @@ def generate_answer(question: str, user_email: str = "Anonymous", user_name: str
     )
 
     return answer
+
+
+def stream_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest", chat_history: str = ""):
+    """Generator that yields SSE-formatted token strings from the LLM."""
+    start_time = time.time()
+    normalized_question = normalize_question(question)
+
+    print(f"DEBUG: Contextual Memory (History Buffer):\n{chat_history}\n")
+    print(f"\nPerforming fast RRF search for: {normalized_question}")
+    results = search_similar_documents(normalized_question, limit=5)
+
+    if not results:
+        yield "data: I don't know.\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    print("\nRetrieved Chunks (RRF Ranked):\n")
+    for r in results:
+        print(f"TITLE: {r['title']}")
+        print(f"RRF SCORE: {r.get('rrf_score', 0):.4f}")
+        print("-" * 50)
+
+    context = "\n\n".join([r["content"] for r in results])
+    full_answer_parts = []
+
+    try:
+        for chunk in chain.stream({
+            "context": context,
+            "chat_history": chat_history,
+            "question": normalized_question
+        }):
+            if chunk:
+                full_answer_parts.append(chunk)
+                safe_chunk = chunk.replace("\n", "\\n")
+                yield f"data: {safe_chunk}\n\n"
+    except Exception as e:
+        yield f"data: [ERROR] {str(e)}\n\n"
+        yield "data: [DONE]\n\n"
+        return
+
+    yield "data: [DONE]\n\n"
+
+    full_answer = "".join(full_answer_parts)
+    elapsed_ms = (time.time() - start_time) * 1000
+    log_interaction(
+        query=question,
+        normalized_query=normalized_question,
+        results=results,
+        answer=full_answer,
+        latency_ms=elapsed_ms,
+        user_email=user_email,
+        user_name=user_name
+    )
 
 
 if __name__ == "__main__":
