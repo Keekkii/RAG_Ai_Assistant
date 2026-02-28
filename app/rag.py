@@ -128,8 +128,6 @@ def stream_answer(question: str, user_email: str = "Anonymous", user_name: str =
         yield "data: [DONE]\n\n"
         return
 
-    yield "data: [DONE]\n\n"
-
     full_answer = "".join(full_answer_parts)
     elapsed_ms = (time.time() - start_time) * 1000
     log_interaction(
@@ -141,6 +139,8 @@ def stream_answer(question: str, user_email: str = "Anonymous", user_name: str =
         user_email=user_email,
         user_name=user_name
     )
+
+    yield "data: [DONE]\n\n"
 
 
 if __name__ == "__main__":
