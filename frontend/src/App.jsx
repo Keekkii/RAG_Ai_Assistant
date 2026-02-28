@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import ChatWidget from "./ChatWidget";
 import FullChat from "./FullChat";
@@ -10,20 +10,43 @@ function App() {
   const [showFullChat, setShowFullChat] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [session, setSession] = useState(null);
+  const [sessionStart, setSessionStart] = useState(null);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) setSessionStart(new Date().toISOString());
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) setSessionStart(new Date().toISOString());
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const idleTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!session) return;
+
+    const resetTimer = () => {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(handleLogout, 120000);
+    };
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(idleTimerRef.current);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [session]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -71,13 +94,13 @@ function App() {
       </main>
 
       {/* Conditional Full UI */}
-      {showFullChat && <FullChat onClose={() => setShowFullChat(false)} />}
+      {showFullChat && <FullChat onClose={() => setShowFullChat(false)} sessionStart={sessionStart} />}
 
       {/* Dashboard Overlay */}
       {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} />}
 
       {/* Floating Chat Widget (Always available unless full UI is open) */}
-      {!showFullChat && <ChatWidget onExpand={() => setShowFullChat(true)} />}
+      {!showFullChat && <ChatWidget onExpand={() => setShowFullChat(true)} sessionStart={sessionStart} />}
     </div>
   );
 }

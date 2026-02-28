@@ -2,41 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import './ChatWidget.css';
 import { supabase } from "./supabaseClient";
 
-const ChatWidget = ({ onExpand }) => {
+const ChatWidget = ({ onExpand, sessionStart }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const [isFetchingHistory, setIsFetchingHistory] = useState(false);
-
     const messagesEndRef = useRef(null);
     const textareaRef = useRef(null);
-
-    // Fetch history from backend
-    const fetchHistory = async () => {
-        setIsFetchingHistory(true);
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.access_token;
-            if (!token) return;
-
-            const response = await fetch('http://127.0.0.1:8000/history', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (response.ok && Array.isArray(data)) {
-                setMessages(data);
-            } else {
-                console.error('History API error:', data);
-                setMessages([]);
-            }
-        } catch (error) {
-            console.error('Failed to fetch history:', error);
-        } finally {
-            setIsFetchingHistory(false);
-        }
-    };
 
     const saveToHistory = async (role, content) => {
         try {
@@ -54,10 +27,6 @@ const ChatWidget = ({ onExpand }) => {
             console.error('Failed to save to history:', error);
         }
     };
-
-    useEffect(() => {
-        fetchHistory();
-    }, []);
 
     // Auto-scroll to bottom
     const scrollToBottom = () => {
@@ -87,9 +56,6 @@ const ChatWidget = ({ onExpand }) => {
         setInputValue('');
         setIsLoading(true);
 
-        // Save user message to DB
-        saveToHistory('user', userMsg.content);
-
         // Add empty placeholder for the AI response that will be filled token-by-token
         setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
 
@@ -103,7 +69,7 @@ const ChatWidget = ({ onExpand }) => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ question: userMsg.content }),
+                body: JSON.stringify({ question: userMsg.content, session_start: sessionStart }),
             });
 
             if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -130,6 +96,7 @@ const ChatWidget = ({ onExpand }) => {
 
                         if (payload === '[DONE]') {
                             setIsLoading(false);
+                            saveToHistory('user', userMsg.content);
                             saveToHistory('assistant', fullAnswer);
                             return;
                         }

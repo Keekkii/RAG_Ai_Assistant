@@ -59,6 +59,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 # --- Models ---
 class QuestionRequest(BaseModel):
     question: str
+    session_start: str | None = None
 
 class HistoryRequest(BaseModel):
     role: str
@@ -104,12 +105,16 @@ def chat_stream(request: QuestionRequest, token: str = Depends(oauth2_scheme), u
     chat_history_str = ""
     try:
         supabase.postgrest.auth(token)
-        history_res = supabase.table("chat_history") \
+        query = supabase.table("chat_history") \
             .select("role", "content") \
             .eq("user_id", str(user.id)) \
             .order("created_at", desc=True) \
-            .limit(10) \
-            .execute()
+            .limit(10)
+
+        if request.session_start:
+            query = query.gte("created_at", request.session_start)
+
+        history_res = query.execute()
 
         history_parts = []
         for msg in reversed(history_res.data):
