@@ -13,12 +13,7 @@ llm = ChatOllama(
 
 RAG_PROMPT = PromptTemplate(
     input_variables=["context", "chat_history", "question"],
-    template="""You are the AlphaWave AI Assistant.
-
-STRICT INSTRUCTIONS:
-1. If the user uses pronouns (like "his", "it", or "that"), use the Chat History below to identify who or what they are talking about.
-2. Answer the question DIRECTLY. Do not say "To answer your question" or explain your reasoning.
-3. Be concise and professional.
+    template="""Answer using ONLY the Context below. If the answer isn't in the Context, say "I don't have that information." Use Chat History to resolve pronouns.
 
 Chat History:
 {chat_history}
@@ -26,8 +21,7 @@ Chat History:
 Context:
 {context}
 
-User Question: {question}
-
+Question: {question}
 Answer:"""
 )
 
