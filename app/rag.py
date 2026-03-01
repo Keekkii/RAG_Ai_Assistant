@@ -84,45 +84,48 @@ def generate_answer(question: str, user_email: str = "Anonymous", user_name: str
     return answer
 
 
-def stream_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest", chat_history: str = ""):
+def stream_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest", chat_history: str = "", session_start: str = None):
     """Generator that yields SSE-formatted token strings from the LLM."""
     start_time = time.time()
     normalized_question = normalize_question(question)
 
     print(f"DEBUG: Contextual Memory (History Buffer):\n{chat_history}\n")
     print(f"\nPerforming fast RRF search for: {normalized_question}")
-    results = search_similar_documents(normalized_question, limit=5)
 
-    if not results:
-        yield "data: I don't know.\n\n"
-        yield "data: [DONE]\n\n"
-        return
-
-    print("\nRetrieved Chunks (RRF Ranked):\n")
-    for r in results:
-        print(f"TITLE: {r['title']}")
-        print(f"RRF SCORE: {r.get('rrf_score', 0):.4f}")
-        print("-" * 50)
-
-    context = "\n\n".join([r["content"] for r in results])
+    results = []
     full_answer_parts = []
+    error_msg = None
 
     try:
-        for chunk in chain.stream({
-            "context": context,
-            "chat_history": chat_history,
-            "question": normalized_question
-        }):
-            if chunk:
-                full_answer_parts.append(chunk)
-                safe_chunk = chunk.replace("\n", "\\n")
-                yield f"data: {safe_chunk}\n\n"
-    except Exception as e:
-        yield f"data: [ERROR] {str(e)}\n\n"
-        yield "data: [DONE]\n\n"
-        return
+        results = search_similar_documents(normalized_question, limit=5)
 
-    full_answer = "".join(full_answer_parts)
+        if not results:
+            yield "data: I don't know.\n\n"
+        else:
+            print("\nRetrieved Chunks (RRF Ranked):\n")
+            for r in results:
+                print(f"TITLE: {r['title']}")
+                print(f"RRF SCORE: {r.get('rrf_score', 0):.4f}")
+                print("-" * 50)
+
+            context = "\n\n".join([r["content"] for r in results])
+
+            for chunk in chain.stream({
+                "context": context,
+                "chat_history": chat_history,
+                "question": normalized_question
+            }):
+                if chunk:
+                    full_answer_parts.append(chunk)
+                    safe_chunk = chunk.replace("\n", "\\n")
+                    yield f"data: {safe_chunk}\n\n"
+
+    except Exception as e:
+        error_msg = str(e)
+        print(f"ERROR in stream_answer: {error_msg}")
+        yield f"data: [ERROR] {error_msg}\n\n"
+
+    full_answer = "".join(full_answer_parts) if full_answer_parts else (f"[ERROR] {error_msg}" if error_msg else "I don't know.")
     elapsed_ms = (time.time() - start_time) * 1000
     log_interaction(
         query=question,
@@ -131,7 +134,8 @@ def stream_answer(question: str, user_email: str = "Anonymous", user_name: str =
         answer=full_answer,
         latency_ms=elapsed_ms,
         user_email=user_email,
-        user_name=user_name
+        user_name=user_name,
+        session_start=session_start
     )
 
     yield "data: [DONE]\n\n"

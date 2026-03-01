@@ -129,7 +129,8 @@ def chat_stream(request: QuestionRequest, token: str = Depends(oauth2_scheme), u
             request.question,
             user_email=user.email,
             user_name=user.user_metadata.get("full_name", "User"),
-            chat_history=chat_history_str
+            chat_history=chat_history_str,
+            session_start=request.session_start
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
@@ -190,7 +191,7 @@ def get_logs(user=Depends(get_current_user)):
                 except:
                     continue
     
-    return logs[::-1][:50]
+    return logs[::-1][:500]
 
 @app.get("/health")
 def health():
