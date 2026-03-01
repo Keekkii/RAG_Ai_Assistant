@@ -92,13 +92,13 @@ def chat(request: QuestionRequest, token: str = Depends(oauth2_scheme), user=Dep
     user_email = user.email
     user_name = user.user_metadata.get("full_name", "User")
     
-    answer = generate_answer(
-        request.question, 
-        user_email=user_email, 
+    answer, sources = generate_answer(
+        request.question,
+        user_email=user_email,
         user_name=user_name,
         chat_history=chat_history_str
     )
-    return {"answer": answer}
+    return {"answer": answer, "sources": sources}
 
 @app.post("/chat/stream")
 def chat_stream(request: QuestionRequest, token: str = Depends(oauth2_scheme), user=Depends(get_current_user)):

@@ -304,3 +304,52 @@
         max-width: calc(100vw - 24px);
     }
 }
+
+/* Source reference chips */
+.source-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.source-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px 2px 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #9CA3AF;
+    text-decoration: none;
+    max-width: 150px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.source-chip:hover {
+    background: rgba(0, 194, 255, 0.08);
+    border-color: rgba(0, 194, 255, 0.35);
+    color: #e2e8f0;
+}
+
+.source-chip-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    background: #374151;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #d1d5db;
+    flex-shrink: 0;
+}
+
+.source-chip-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

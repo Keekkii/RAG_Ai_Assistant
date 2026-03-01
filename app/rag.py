@@ -38,7 +38,31 @@ def normalize_question(question: str) -> str:
 
 
 import time
+import re
+import json
 from app.logger import log_interaction
+
+
+def extract_sources(results: list) -> list:
+    best_by_url = {}
+    for r in results:
+        url = r.get("url", "")
+        if not url:
+            continue
+        if url not in best_by_url or r.get("rrf_score", 0) > best_by_url[url].get("rrf_score", 0):
+            best_by_url[url] = r
+    sources = []
+    for url, r in best_by_url.items():
+        raw_title = r.get("title", "")
+        match = re.match(r"^(.*?)\s*\(chunk\s+(\d+)\)\s*$", raw_title, re.IGNORECASE)
+        page_title = match.group(1).strip() if match else raw_title.strip()
+        chunk_num = int(match.group(2)) if match else 1
+        sources.append({"url": url, "title": page_title, "chunk": chunk_num, "_score": r.get("rrf_score", 0)})
+    sources.sort(key=lambda x: x["_score"], reverse=True)
+    for s in sources:
+        del s["_score"]
+    return sources
+
 
 def generate_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest", chat_history: str = "") -> str:
     start_time = time.time()
@@ -51,7 +75,7 @@ def generate_answer(question: str, user_email: str = "Anonymous", user_name: str
     results = search_similar_documents(normalized_question, limit=5)
     
     if not results:
-        return "I don't know."
+        return "I don't know.", []
 
     print("\nRetrieved Chunks (RRF Ranked):\n")
     for r in results:
@@ -81,7 +105,8 @@ def generate_answer(question: str, user_email: str = "Anonymous", user_name: str
         user_name=user_name
     )
 
-    return answer
+    sources = [] if "I don't have that information" in answer else extract_sources(results)
+    return answer, sources
 
 
 def stream_answer(question: str, user_email: str = "Anonymous", user_name: str = "Guest", chat_history: str = "", session_start: str = None):
@@ -137,6 +162,11 @@ def stream_answer(question: str, user_email: str = "Anonymous", user_name: str =
         user_name=user_name,
         session_start=session_start
     )
+
+    if "I don't have that information" not in full_answer:
+        sources = extract_sources(results)
+        if sources:
+            yield f"data: [SOURCES]{json.dumps(sources, ensure_ascii=False)}\n\n"
 
     yield "data: [DONE]\n\n"
 

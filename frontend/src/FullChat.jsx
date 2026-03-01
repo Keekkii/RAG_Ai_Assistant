@@ -35,7 +35,7 @@ function FullChat({ onClose, sessionStart }) {
         setLoading(true);
 
         // Add empty placeholder for the AI response
-        setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+        setMessages((prev) => [...prev, { role: "assistant", content: "", sources: [] }]);
 
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -81,12 +81,23 @@ function FullChat({ onClose, sessionStart }) {
                         if (payload.startsWith("[ERROR]")) {
                             throw new Error(payload.slice(8));
                         }
+                        if (payload.startsWith("[SOURCES]")) {
+                            try {
+                                const sources = JSON.parse(payload.slice(9));
+                                setMessages((prev) => {
+                                    const updated = [...prev];
+                                    updated[updated.length - 1] = { ...updated[updated.length - 1], sources };
+                                    return updated;
+                                });
+                            } catch (e) { console.warn("Failed to parse sources:", e); }
+                            continue;
+                        }
 
                         const tokenText = payload.replace(/\\n/g, "\n");
                         fullAnswer += tokenText;
                         setMessages((prev) => {
                             const updated = [...prev];
-                            updated[updated.length - 1] = { role: "assistant", content: fullAnswer };
+                            updated[updated.length - 1] = { role: "assistant", content: fullAnswer, sources: updated[updated.length - 1].sources || [] };
                             return updated;
                         });
                     }
@@ -156,6 +167,16 @@ function FullChat({ onClose, sessionStart }) {
                                     className={`full-message ${msg.role === "user" ? "user-full" : "ai-full"}`}
                                 >
                                     {msg.content}
+                                    {msg.role === "assistant" && msg.sources?.length > 0 && (
+                                        <div className="source-chips">
+                                            {msg.sources.slice(0, 1).map((src, i) => (
+                                                <a key={i} href={src.url} target="_blank" rel="noopener noreferrer" className="source-chip">
+                                                    <span className="source-chip-num">{i + 1}</span>
+                                                    <span className="source-chip-title">{src.title}</span>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
